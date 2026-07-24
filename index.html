@@ -1,0 +1,355 @@
+> Yavuz Selim:
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sürpriz Doğum Günü Macerası! 🚚🎁</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body {
+            background: radial-gradient(circle, #1a0033, #050010);
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            text-align: center;
+            min-height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+        .screen {
+            display: none; width: 92%; max-width: 420px; padding: 25px;
+            flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
+            border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        .active { display: flex; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        h1 { margin-bottom: 12px; font-size: 1.7rem; color: #ff69b4; text-shadow: 0 0 15px #ff69b4; }
+        p { margin-bottom: 12px; font-size: 1rem; line-height: 1.4; opacity: 0.9; }
+
+        .btn {
+            background: linear-gradient(45deg, #ff007f, #7928ca);
+            color: white; border: none; padding: 14px 32px; font-size: 1.1rem; font-weight: bold;
+            border-radius: 50px; cursor: pointer; box-shadow: 0 5px 20px rgba(255, 0, 127, 0.4);
+            transition: all 0.2s; margin-top: 15px; text-transform: uppercase;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        /* Karakter Seçimi */
+        .category-options, .sub-options { display: flex; justify-content: center; gap: 12px; margin: 12px 0; width: 100%; }
+        .option-card {
+            font-size: 2.2rem; padding: 10px; border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 18px; cursor: pointer; background: rgba(255, 255, 255, 0.05); transition: 0.2s;
+        }
+        .category-options .option-card { font-size: 1rem; font-weight: bold; padding: 8px 16px; }
+        .option-card.selected { border-color: #ff69b4; background: rgba(255, 105, 180, 0.3); transform: scale(1.08); box-shadow: 0 0 15px #ff69b4; }
+
+        /* Oyun Alanı */
+        #game-container {
+            width: 100%; height: 350px; background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #ff69b4; border-radius: 20px; position: relative; overflow: hidden; touch-action: none;
+        }
+        #player-character { position: absolute; bottom: 15px; font-size: 2.8rem; transform: translateX(-50%); z-index: 5; left: 50%; }
+        .falling-obj { position: absolute; font-size: 2rem; z-index: 2; pointer-events: none; }
+
+        /* Kargo Sahneleri */
+        .delivery-stage {
+            width: 100%; height: 260px; background: rgba(0,0,0,0.5);
+            border-radius: 20px; position: relative; overflow: hidden; border: 1px dashed rgba(255,255,255,0.2);
+            display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+        }
+        
+        .table {
+            width: 160px; height: 40px; background: #8e44ad; border-radius: 8px 8px 0 0;
+            position: absolute; bottom: 0; box-shadow: 0 0 15px rgba(142, 68, 173, 0.5);
+        }
+
+        .truck {
+            font-size: 4rem; position: absolute; bottom: 20px; left: -100px;
+            transition: left 2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .truck.drive-in { left: calc(50% - 40px); }
+        .truck.drive-out { left: 120%; }
+
+> Yavuz Selim:
+.gift-box {
+            font-size: 3.5rem; position: absolute; bottom: 40px; opacity: 0;
+            transform: scale(0.5); transition: all 0.5s ease-out; cursor: pointer;
+        }
+        .gift-box.placed { opacity: 1; transform: scale(1); }
+        .gift-box.bounce { animation: bounce 0.6s infinite alternate; }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+        /* Mektup Görünümü */
+        .paper-folded {
+            background: #fff; color: #222; padding: 25px; border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8); width: 100%; text-align: left;
+            line-height: 1.7; font-size: 1rem; transform: scale(0.1) rotateX(-90deg); opacity: 0;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.8s ease;
+        }
+        .paper-folded.unfold { transform: scale(1) rotateX(0deg); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-select" class="screen active">
+        <h1>Karakter Seçimi 🎭</h1>
+        <p>1. Türü Seç:</p>
+        <div class="category-options">
+            <div class="option-card selected" onclick="selectCategory('cat')">🐱 Kedi</div>
+            <div class="option-card" onclick="selectCategory('horse')">🐎 At</div>
+            <div class="option-card" onclick="selectCategory('rabbit')">🐰 Tavşan</div>
+        </div>
+        <p>2. Karakterin:</p>
+        <div id="sub-options" class="sub-options"></div>
+        <button class="btn" onclick="startGame()">Oyunu Başlat 🚀</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px; font-weight:bold; color:#00ffcc;">
+            <span>1. Bölüm</span>
+            <span>Skor: <span id="score">0</span>/15</span>
+        </div>
+        <div id="game-container">
+            <div id="player-character">🐱</div>
+        </div>
+        <p style="font-size:0.85rem; margin-top:8px; color:#ff69b4;">⭐ Yıldızları topla, 💣 bombalara dikkat et!</p>
+    </div>
+
+    <div id="screen-win" class="screen">
+        <h1 style="color:#00ffcc;">Tebrikler! 🎉</h1>
+        <p>1. Bölümü Harika Bir Skorla Tamamladın!</p>
+        <div style="font-size: 3rem; margin: 10px 0;">🏆</div>
+        <button class="btn" onclick="startDeliveryCutscene()">Hediyeni Gör 🎁</button>
+    </div>
+
+    <div id="screen-delivery" class="screen">
+        <h1 id="delivery-text" style="font-size:1.3rem;">Özel Teslimat Geliyor... 🚚</h1>
+        <div class="delivery-stage">
+            <div class="table"></div>
+            <div id="truck" class="truck">🚚</div>
+            <div id="gift-box" class="gift-box" onclick="openGift()">🎁</div>
+        </div>
+        <p id="click-hint" style="margin-top:15px; color:#ff69b4; font-weight:bold; visibility:hidden;">Kutuyu açmak için üzerine tıkla! ✨</p>
+    </div>
+
+    <div id="screen-letter" class="screen">
+        <div id="letter-paper" class="paper-folded">
+            <h2 style="color: #ff007f; text-align: center; font-size: 1.4rem;">İyi ki Doğdun! 🎂✨</h2>
+            <hr style="margin: 12px 0; border: 0; border-top: 1px solid #eee;">
+            <p>Canım arkadaşım,</p>
+            <br>
+            <p>Sana özel hazırladığım bu sürprizi başarıyla tamamladın! Yeni yaşın sana sağlık, mutluluk, başarı ve bolca neşe getirsin.</p>
+            <br>
+            <p style="text-align: right;"><strong>Doğum günün kutlu olsun! 🎉🎈</strong></p>
+        </div>
+        <button id="reset-btn" class="btn" style="display:none; margin-top:20px;" onclick="location.reload()">Yeniden Oyna 🔄</button>
+    </div>
+
+    <script>
+        let audioCtx;
+        function playSound(freq, d=0.1, type='sine') {
+            try {
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+> Yavuz Selim:
+if(audioCtx.state === 'suspended') audioCtx.resume();
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(); o.stop(audioCtx.currentTime + d);
+            } catch(e) {}
+        }
+
+        const characterData = {
+            cat: ['🐱', '🐈', '😻'],
+            horse: ['🐎', '🎠', '🦄'],
+            rabbit: ['🐰', '🐇', '🥕']
+        };
+
+        let currentCategory = 'cat', selectedChar = '🐱';
+        let score = 0, targetScore = 15, objectsList = [], gameActive = false;
+        let spawnInterval = null;
+
+        function renderSubOptions() {
+            const container = document.getElementById('sub-options');
+            container.innerHTML = '';
+            characterData[currentCategory].forEach((emoji, i) => {
+                const div = document.createElement('div');
+                div.className = 'option-card' + (i === 0 ? ' selected' : '');
+                div.innerText = emoji;
+                div.onclick = () => {
+                    document.querySelectorAll('#sub-options .option-card').forEach(e => e.classList.remove('selected'));
+                    div.classList.add('selected');
+                    selectedChar = emoji;
+                };
+                container.appendChild(div);
+            });
+            selectedChar = characterData[currentCategory][0];
+        }
+        renderSubOptions();
+
+        function selectCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.category-options .option-card').forEach(el => {
+                el.classList.toggle('selected', el.getAttribute('onclick').includes(cat));
+            });
+            renderSubOptions();
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function clearGameObjects() {
+            objectsList.forEach(o => o.el.remove());
+            objectsList = [];
+        }
+
+        function startGame() {
+            showScreen('screen-game');
+            document.getElementById('player-character').innerText = selectedChar;
+            gameActive = true; 
+            score = 0;
+            document.getElementById('score').innerText = score;
+
+            clearGameObjects();
+
+            const move = (e) => {
+                if(!gameActive) return;
+                const gameBox = document.getElementById('game-container');
+                const rect = gameBox.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let x = clientX - rect.left;
+                x = Math.max(25, Math.min(rect.width - 25, x));
+                document.getElementById('player-character').style.left = x + 'px';
+            };
+
+            const gameBox = document.getElementById('game-container');
+            gameBox.onmousemove = move;
+            gameBox.ontouchmove = move;
+
+            if(spawnInterval) clearInterval(spawnInterval);
+            spawnInterval = setInterval(() => {
+                if(gameActive) createFallingObj();
+            }, 850);
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function createFallingObj() {
+            const container = document.getElementById('game-container');
+            const isBomb = Math.random() < 0.25;
+            const obj = document.createElement('div');
+            obj.className = 'falling-obj';
+
+> Yavuz Selim:
+obj.innerText = isBomb ? '💣' : '⭐';
+            let x = Math.random() * (container.clientWidth - 40) + 20;
+            let y = -40;
+            obj.style.left = x + 'px'; obj.style.top = y + 'px';
+            container.appendChild(obj);
+            objectsList.push({ el: obj, x, y, isBomb });
+        }
+
+        function updateGame() {
+            if(!gameActive) return;
+
+            const pRect = document.getElementById('player-character').getBoundingClientRect();
+            
+            for(let i = objectsList.length - 1; i >= 0; i--) {
+                let o = objectsList[i];
+                o.y += 3.2;
+                o.el.style.top = o.y + 'px';
+                const oRect = o.el.getBoundingClientRect();
+
+                if(oRect.bottom >= pRect.top && oRect.top <= pRect.bottom && oRect.right >= pRect.left && oRect.left <= pRect.right) {
+                    o.el.remove();
+                    if(o.isBomb) {
+                        score = Math.max(0, score - 2);
+                        playSound(150, 0.2, 'sawtooth');
+                    } else {
+                        score++;
+                        playSound(600);
+                    }
+                    objectsList.splice(i, 1);
+                    document.getElementById('score').innerText = score;
+
+                    if(score >= targetScore) {
+                        gameActive = false;
+                        clearInterval(spawnInterval);
+                        clearGameObjects();
+                        if(typeof confetti === 'function') confetti({ particleCount: 100, spread: 70 });
+                        showScreen('screen-win');
+                        return;
+                    }
+                } else if(o.y > 360) { 
+                    o.el.remove(); 
+                    objectsList.splice(i, 1); 
+                }
+            }
+            
+            if(gameActive) {
+                requestAnimationFrame(updateGame);
+            }
+        }
+
+        /* KARGO ARABASI ANİMASYON AŞAMASI */
+        function startDeliveryCutscene() {
+            showScreen('screen-delivery');
+            const truck = document.getElementById('truck');
+            const gift = document.getElementById('gift-box');
+            const deliveryText = document.getElementById('delivery-text');
+            const clickHint = document.getElementById('click-hint');
+
+            // Durumu sıfırla
+            truck.className = 'truck';
+            gift.className = 'gift-box';
+            clickHint.style.visibility = 'hidden';
+            deliveryText.innerText = "Özel Teslimat Geliyor... 🚚";
+
+            // 1. Kargo arabası gelir
+            setTimeout(() => {
+                truck.classList.add('drive-in');
+                playSound(300, 0.5);
+                
+                // 2. Kutu masaya bırakılır
+                setTimeout(() => {
+                    gift.classList.add('placed');
+                    deliveryText.innerText = "Paket Masaya Bırakıldı! 📦";
+                    playSound(500, 0.2);
+
+                    // 3. Araba uzaklaşır
+                    setTimeout(() => {
+                        truck.classList.remove('drive-in');
+                        truck.classList.add('drive-out');
+                        gift.classList.add('bounce');
+                        clickHint.style.visibility = 'visible';
+                    }, 1000);
+                }, 2000);
+            }, 300);
+        }
+
+        /* KUTU AÇILMA VE MEKTUP */
+        function openGift() {
+            playSound(800, 0.3);
+            if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+
+            showScreen('screen-letter');
+            setTimeout(() => {
+                document.getElementById('letter-paper').classList.add('unfold');
+                setTimeout(() => {
+                    document.getElementById('reset-btn').style.display = 'inline-block';
+                }, 800);
+            }, 200);
+        }
+    </script>
+</body>
+</html>
