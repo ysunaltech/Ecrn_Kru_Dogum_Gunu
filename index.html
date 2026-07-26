@@ -110,7 +110,7 @@
     <div id="screen-game" class="screen">
         <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px; font-weight:bold; color:#00ffcc;">
             <span>1. Bölüm</span>
-            <span>Skor: <span id="score">0</span>/15</span>
+            <span>Skor: <span id="score">0</span>/100</span>
         </div>
         <div id="game-container">
             <div id="player-character">🐱</div>
@@ -170,7 +170,7 @@
         };
 
         let currentCategory = 'cat', selectedChar = '🐱';
-        let score = 0, targetScore = 15, objectsList = [], gameActive = false;
+        let score = 0, targetScore = 100, objectsList = [], gameActive = false;
         let spawnInterval = null;
 
         function renderSubOptions() {
@@ -233,16 +233,18 @@
             gameBox.ontouchmove = move;
 
             if(spawnInterval) clearInterval(spawnInterval);
+            // Nesne düşme süresi 850ms'den 500ms'ye indirildi (Daha tempolu oyun için)
             spawnInterval = setInterval(() => {
                 if(gameActive) createFallingObj();
-            }, 850);
+            }, 500);
 
             requestAnimationFrame(updateGame);
         }
 
         function createFallingObj() {
             const container = document.getElementById('game-container');
-            const isBomb = Math.random() < 0.25;
+            // Bomba ihtimali %25'ten %45'e çıkarıldı
+            const isBomb = Math.random() < 0.45;
             const obj = document.createElement('div');
             obj.className = 'falling-obj';
             obj.innerText = isBomb ? '💣' : '⭐';
@@ -260,14 +262,14 @@
             
             for(let i = objectsList.length - 1; i >= 0; i--) {
                 let o = objectsList[i];
-                o.y += 3.2;
+                o.y += 3.8; // Nesnelerin düşüş hızı biraz artırıldı
                 o.el.style.top = o.y + 'px';
                 const oRect = o.el.getBoundingClientRect();
 
                 if(oRect.bottom >= pRect.top && oRect.top <= pRect.bottom && oRect.right >= pRect.left && oRect.left <= pRect.right) {
                     o.el.remove();
                     if(o.isBomb) {
-                        score = Math.max(0, score - 2);
+                        score = Math.max(0, score - 3); // Bomba patladığında silinen skor 2'den 3'e çıkarıldı
                         playSound(150, 0.2, 'sawtooth');
                     } else {
                         score++;
