@@ -233,7 +233,6 @@
             gameBox.ontouchmove = move;
 
             if(spawnInterval) clearInterval(spawnInterval);
-            // Nesne düşme süresi 850ms'den 500ms'ye indirildi (Daha tempolu oyun için)
             spawnInterval = setInterval(() => {
                 if(gameActive) createFallingObj();
             }, 500);
@@ -243,7 +242,6 @@
 
         function createFallingObj() {
             const container = document.getElementById('game-container');
-            // Bomba ihtimali %25'ten %45'e çıkarıldı
             const isBomb = Math.random() < 0.45;
             const obj = document.createElement('div');
             obj.className = 'falling-obj';
@@ -262,18 +260,24 @@
             
             for(let i = objectsList.length - 1; i >= 0; i--) {
                 let o = objectsList[i];
-                o.y += 3.8; // Nesnelerin düşüş hızı biraz artırıldı
+                o.y += 3.8;
                 o.el.style.top = o.y + 'px';
                 const oRect = o.el.getBoundingClientRect();
 
                 if(oRect.bottom >= pRect.top && oRect.top <= pRect.bottom && oRect.right >= pRect.left && oRect.left <= pRect.right) {
                     o.el.remove();
                     if(o.isBomb) {
-                        score = Math.max(0, score - 3); // Bomba patladığında silinen skor 2'den 3'e çıkarıldı
+                        score = score - 3; // Math.max kaldırıldı, böylece eksiye düşebilir
                         playSound(150, 0.2, 'sawtooth');
                     } else {
                         score++;
                         playSound(600);
+                        
+                        // Troll Özelliği: Skor 99 olunca 1'e düşür!
+                        if(score === 99) {
+                            score = 1;
+                            playSound(100, 0.5, 'square'); // Troll ses efekti
+                        }
                     }
                     objectsList.splice(i, 1);
                     document.getElementById('score').innerText = score;
@@ -305,24 +309,20 @@
             const deliveryText = document.getElementById('delivery-text');
             const clickHint = document.getElementById('click-hint');
 
-            // Durumu sıfırla
             truck.className = 'truck';
             gift.className = 'gift-box';
             clickHint.style.visibility = 'hidden';
             deliveryText.innerText = "Özel Teslimat Geliyor... 🚚";
 
-            // 1. Kargo arabası gelir
             setTimeout(() => {
                 truck.classList.add('drive-in');
                 playSound(300, 0.5);
                 
-                // 2. Kutu masaya bırakılır
                 setTimeout(() => {
                     gift.classList.add('placed');
                     deliveryText.innerText = "Paket Masaya Bırakıldı! 📦";
                     playSound(500, 0.2);
 
-                    // 3. Araba uzaklaşır
                     setTimeout(() => {
                         truck.classList.remove('drive-in');
                         truck.classList.add('drive-out');
